@@ -5,8 +5,6 @@ import (
 	"flag"
 	"github.com/go-vgo/robotgo"
 	"time"
-	//"os"
-	//"time"
 )
 
 /*
@@ -30,7 +28,7 @@ const (
 
 func main() {
 	var scale float64 // 设置鼠标增加的倍数, 仅在上屏放大
-	flag.Float64Var(&scale, "scale", 0.5, "鼠标放大倍数")
+	flag.Float64Var(&scale, "scale", 0.5, "鼠标速度增加的放大倍数")
 	flag.Parse()
 	var lastMousePosX, lastMousePosY int
 	var currentMousePosX, currentMousePosY int
