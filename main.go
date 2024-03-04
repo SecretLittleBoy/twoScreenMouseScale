@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"math"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -153,12 +156,29 @@ func onReady() {
 				strTitle = fmt.Sprintf("%.1f", scaleObj.scale+1)
 				scaleObj.RWLock.Unlock()
 			case <-terminalInput.ClickedCh:
-				fmt.Println("Please input the scale of mouse speed:")
 				var scale float64
-				fmt.Scanln(&scale)
-				if scale <= 1 {
-					scale = 1
+				for {
+					fmt.Println("Please input the scale of mouse speed:")
+					reader := bufio.NewReader(os.Stdin)
+					input, _ := reader.ReadString('\n')
+					input = strings.TrimSpace(input)
+					if input == "" {
+						continue
+					}
+					var err error
+					scale, err = strconv.ParseFloat(input, 64)
+					if err != nil {
+						fmt.Println("Invalid input, please enter a decimal number.")
+						continue
+					}
+					if scale < 1 {
+						fmt.Println("The scale of mouse speed should NOT be less than 1.0")
+						scale = 1
+					}
+					break
 				}
+
+				fmt.Println("Set the scale of mouse speed to:", scale)
 				scaleObj.RWLock.Lock()
 				scaleObj.scale = scale - 1
 				strTitle = fmt.Sprintf("%.1f", scaleObj.scale+1)
