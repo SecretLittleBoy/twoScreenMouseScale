@@ -29,7 +29,7 @@ const (
 )
 
 func main() {
-	var scale float64 // 设置鼠标放大倍数, 仅在上屏放大
+	var scale float64 // 设置鼠标增加的倍数, 仅在上屏放大
 	flag.Float64Var(&scale, "scale", 1.5, "鼠标放大倍数")
 	flag.Parse()
 	var lastMousePosX, lastMousePosY int
