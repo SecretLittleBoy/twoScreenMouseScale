@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -12,13 +13,14 @@ import (
 )
 
 /*
+像素点坐标：
 
 |
-|	上屏
+|	上屏:(x,y,w,h) = (0,-1692,3008,1692)
 |(0,0)
 |----------------------->x
 |
-|	下屏
+|	下屏:(x,y,w,h) = (0,0,1800,1169)
 |
 \/
 y
@@ -35,9 +37,45 @@ type Scale struct {
 	RWLock sync.RWMutex
 }
 
+type ScreenRect struct {
+	x      int
+	y      int
+	width  int
+	height int
+}
+
+var externalMonitor ScreenRect
 var scaleObj Scale
 
+func detectScreen() error {
+	findOneExternalMonitor := false
+	for i := -10; i < 10; i++ {
+		rect := robotgo.GetScreenRect(i)
+		if (rect.X != 0 || rect.Y != 0) && math.Abs(float64(rect.W)) >= 5 && math.Abs(float64(rect.H)) >= 5 {
+			if !findOneExternalMonitor {
+				externalMonitor = ScreenRect{
+					x:      rect.X,
+					y:      rect.Y,
+					width:  rect.W,
+					height: rect.H,
+				}
+				findOneExternalMonitor = true
+			} else {
+				return fmt.Errorf("暂不支持多个外接显示器")
+			}
+		}
+	}
+	if !findOneExternalMonitor {
+		return fmt.Errorf("未找到外接显示器")
+	}
+	return nil
+}
+
 func main() {
+	err := detectScreen()
+	if err != nil {
+		panic(err)
+	}
 	flag.Float64Var(&scaleObj.scale, "scale", 1.0, "鼠标速度增加的放大倍数")
 	flag.Parse()
 	var lastMousePosX, lastMousePosY int
@@ -46,13 +84,16 @@ func main() {
 	go func() {
 		for {
 			currentMousePosX, currentMousePosY = robotgo.Location()
-			if currentMousePosY >= 0 || scaleObj.scale <= 0.01 {
+			if !(currentMousePosX > externalMonitor.x && currentMousePosX < externalMonitor.x+externalMonitor.width &&
+				currentMousePosY > externalMonitor.y && currentMousePosY < externalMonitor.y+externalMonitor.height) ||
+				scaleObj.scale <= 0.01 {
 				continue
 			}
 			xDiff := currentMousePosX - lastMousePosX
 			yDiff := currentMousePosY - lastMousePosY
 
 			if xDiff >= diffLimit || yDiff >= diffLimit {
+				//fmt.Println("accelerating mouse speed,scale:", scaleObj.scale+1, "xDiff:", xDiff, "yDiff:", yDiff)
 				scaleObj.RWLock.RLock()
 				curScale := scaleObj.scale * min((max(float64(xDiff), float64(yDiff))/diffMaxScaleBoundary), 1.0)
 				scaleObj.RWLock.RUnlock()
