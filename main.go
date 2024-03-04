@@ -46,7 +46,7 @@ func main() {
 	go func() {
 		for {
 			currentMousePosX, currentMousePosY = robotgo.Location()
-			if currentMousePosY >= 0 {
+			if currentMousePosY >= 0 || scaleObj.scale <= 0.01 {
 				continue
 			}
 			xDiff := currentMousePosX - lastMousePosX
